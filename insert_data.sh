@@ -7,8 +7,8 @@ else
 fi
 
 # Do not change code above this line. Use the PSQL variable above to query your database.
-echo "$($PSQL "TRUNCATE teams, games")"
-cat games_test.csv | while IFS=',' read YEAR ROUND WINNER OPPONENT WINNER_GOALS OPPONENT_GOALS; do
+echo "$($PSQL "TRUNCATE teams, games RESTART IDENTITY")"
+cat games.csv | while IFS=',' read YEAR ROUND WINNER OPPONENT WINNER_GOALS OPPONENT_GOALS; do
     if [[ $YEAR != 'year' ]]; then
         #add each team to teams table
         #I'll do the winner first
@@ -23,7 +23,18 @@ cat games_test.csv | while IFS=',' read YEAR ROUND WINNER OPPONENT WINNER_GOALS 
         if [[ $INSERT_OPPONENT == 'INSERT 0 1' ]]; then
             echo $OPPONENT added
         fi
+        : ' WINNER and OPPONENT should be added to the teams table now -
+        Next insert the info for the games table
+        games table columns are ---
+        year, round, winner_id, opponent_id '
+        #GET WINNER ID
+        GET_WINNER_ID=$($PSQL "SELECT team_id FROM teams WHERE name = '$WINNER'")
+        GET_OPPONENT_ID=$($PSQL "SELECT team_id FROM teams WHERE name = '$OPPONENT'")
 
+        INSERT_GAMES=$($PSQL "INSERT INTO games (year, round, winner_id, opponent_id, winner_goals, opponent_goals) VALUES ('$YEAR' , '$ROUND' , '$GET_WINNER_ID', '$GET_OPPONENT_ID', '$WINNER_GOALS' , '$OPPONENT_GOALS')")
+        if [[ $INSERT_GAMES == 'INSERT 0 1' ]]; then
+            echo $YEAR , $ROUND added
+        fi
     fi
 
 done
